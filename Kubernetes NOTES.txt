@@ -1,0 +1,400 @@
+Set-Alias -Name k -Value kubectl
+
+//get entire environment
+k get all
+
+
+run
+kubectl proxy
+
+To get a token in another window
+
+kubectl -n kubernetes-dashboard create token admin-user
+
+
+open
+http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/#/login
+
+
+
+after enabling you can set an alias
+//only sets if for a session
+
+
+Set-Alias -Name k -Value kubectl
+
+PS C:\Users\jfabi> k version
+Client Version: v1.32.2
+Kustomize Version: v5.5.0
+Server Version: v1.32.2
+
+
+PS C:\Users\jfabi> k cluster-info
+Kubernetes control plane is running at https://kubernetes.docker.internal:6443
+CoreDNS is running at https://kubernetes.docker.internal:6443/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
+
+To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
+
+***********Web UI Dashboard ***********
+
+Step to use:
+Install the Kubernetes Dashboard:
+
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
+Run
+
+kubectl apply -f dashboard.adminuser.yml
+Get a token (see https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/creating-sample-user.md) by running the command shown below. Copy the token into your clipboard.
+
+kubectl -n kubernetes-dashboard create token admin-user
+Run
+
+kubectl proxy
+Visit http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
+
+Paste the token into the login screen and you can then sign in to the dashboard.
+
+***********POD Concepts
+Smallest Object of the kub object model
+env for containers
+organization applicaion parts into pods
+(server, caching, APIs, database, etc)
+
+Normally you have a single process per container and single container per pod
+
+Pod has IP, memory, volumes, etc shared accross containers
+Scale horizontally by adding Pod replicas
+
+Pods live and die but never come back to life
+
+
+Pods containers shared the same network namespaces (shareip/port)
+Pod containers have the same loopback network interface (localhost)
+
+Container process need to bind to different ports within a pod
+
+Pods can't span nodes
+
+***********Create Pods via kubectl or yaml
+
+Podas and containers are only accessible within a Kube cluster by default
+
+One way to expose a container port externally:
+ kubectl port-forward
+
+
+#Enable Prod container to be called externally - Most basic way
+kubectl port-forward [name-of-pod] 8080:80
+
+#Will cause pod to be recreated - keeps the deployment healthy be recreating the pod
+kubectl delete pod [name-of-pod]
+
+#Delete Deployment if you dont want the pod to be recreated then delete the deployment
+kubectl delete deployment [name-of-deployment]
+
+
+***********Kubectl and pods
+Set-Alias -Name k -Value kubectl
+k run my-nginx --image=nginx:alpine
+k get pods
+k port-forward my-nginx 8080:80
+k delete pod my-nginx
+
+***********Via Yaml
+#Basic Pod yml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-nginx
+spec:
+  containers:
+  - name: my-nginx
+    image: nginx:alphine
+
+
+
+k create -f nginx.pod.yml --dry-run --validate=true
+
+#Alternate way to create or apply changes to a pod, it will create if not existing or will update if existing
+k apply -f file.pod.yml
+
+# Use --save-config when you want to use kubectl apply in the future
+k apply -f file.pod.yml --save-config
+
+# Delete Pod using yaml file
+k delete -f file.pod.yml
+
+
+k describe pod my-nginx
+
+
+
+******Access to Inside the Container
+//exec into container, use -it for interactive and sh for shell
+
+k exec -it my-nginx -- sh  //new way of exec into container
+
+
+*****Pod Health / Probes
+Liveness
+Readiness
+
+
+**********Creating Deployments /ReplicaSet
+A ReplicaSet is a declarative way to manage Pods
+A Deployment is a declarative way to manage Pods using a ReplicaSet
+
+Deployment and ReplicaSets ensure Pods stay running and be be used to scale Pods
+
+ReplicaSets act as a Pod controller:
+
+- Self-healing mechanism
+- Ensure the requested number of  Pods are available
+- Provide Fault-TOlerance
+- Can be used to scale Pods
+- No need to create Pods directly
+- Used by deployments
+
+
+A Deployment manages Pods:
+
+- Pods are managed using ReplicaSets
+- Scales ReplicaSets, which scale Pods
+- Supports zero-downtime updates by creating and destroying ReplicaSets
+- Provides rollback Functionality
+- Create a unique label that is assigned to the ReplicaSet and generated Pods
+- Yaml is very similar to a ReplicaSet 
+
+
+
+**********Creating Deployment Using Yaml
+Dont need to create the repolicasets
+
+(just use apply since it will create if doesn't exists or updates, no need to use create)
+
+k apply -f nginx.deployment.yml 
+
+//get deploymensts
+k get deploy
+k get deployments
+
+//get deployments with labels
+k get deployments --show-labels
+
+//get deployments with specific labels -l
+
+k get deployment -l app=nginx
+
+k delete deployment [deployment-name]
+
+//delete via yaml
+k delete deployment -f  nginx.deployment.yml 
+
+//scale deployment
+k scale deployment [deployment-name] --replicas=5
+
+You can set the replicates in the YML Files as well
+
+spec:
+  replicas: 3
+
+
+
+Resource Constraits - allows to constrain a container to certain resources which is very important, need constraints so kubernetes isn't a runaway train
+spec:
+      containers:
+      - name: my-nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            memory: "128Mi" #128 MB
+            cpu: "200m" #200 millicpu (.2 cpu or 20% of the cpu)
+
+
+
+
+
+
+k get deploy -l app=my-nginx
+
+k create -f nginx.deployment.yml --save-config
+
+
+//create 4 replicas
+k scale -f nginx.deployment.yml --replicas=4
+
+
+
+
+
+
+**********Z Downtime Deployment Options
+
+How do You update existing pods?
+
+Current Pod               Desired Pod
+nginx:1.14.2-alpine ----> nginx1.15.9-alpine
+
+
+Zero downtime dployments allow software updates to be deployed to production without impacting end users which if one the strengths
+
+update an applicatin's pods without impacting end users
+
+Several Options are available:
+- Rolling updates - rolling is updating pod then deploying one by one
+- Blue-green deployments (multiple environments running exactly at same time)
+- Canary deployments small amount of traffic goes to new deployment until 
+- Rollbacks - roll back to previous version
+
+
+
+Once the new pod is ready one of the older pods can be deleted, repeat...etc 
+
+
+//update a deployment by changing the yaml and applying changes to the cluster with kubectl apply
+k apply -f file.deployment.yml
+
+
+***Deployments in action
+k apply -f node-app-v1.deployment.yml
+k apply -f node-app-v2.deployment.yml
+k apply -f node-app-v3.deployment.yml
+
+
+Set-Alias -Name k -Value kubectl
+
+
+**********Services
+A  Service provides a single point of entry for accessing one or more Pods
+
+Since Pods live and die, you can't rely on the ip address staying the same
+
+A Pod gets an IP Address after it has been scheduled (no way for clients to know iP Ahead of time)
+
+
+Services abstract POD ip addresses from consumers
+
+
+my-app (Service) has a fixed ip but it knows how to talk to the pods behind it (labels are important since can associate pods with a service via the label)
+
+It will know how to Load balances between pod which is a built in feature
+
+Node's kube-proxy creates a virutla ip for the services
+
+Layer 4 (TCP/UDP or IP)
+
+Service are not ephemeral, they need to stick around
+
+Creates endpoints which sits between a Service and POD
+
+
+service 10.0.0.1:80 (label frontend ) ----> Pod 10.0.0.43:8080 (label frontend) --->  service (label backend) 10.2.0.1:9000  --->  Pod (label backend) 10.2.0.10:27017  
+                                     ---->  Pod 10.0.0.53:8080 (label frontend) ---> 
+
+
+**Service Types                                     
+4 main types
+
+1 - ClusterIP - Expose the service on a cluster-internal IP (Default)
+2 - NodePort - Expose the service on each Node's IP at a static port
+3 - LoadBalancer - Provision an external ip to act as a load balancer for the service
+4 - ExernalName - Maps a service to a DNS name
+
+
+**ClusterIP 
+Service PI is exposed internallly within the cluster
+Only Pods within a cluster can talk to the service
+Allows Pods to talk to other Pods
+
+**NodePort
+Exposes the Service on each Node's IP at a static port
+Allocates a port from a range (default is 30000 - 32767)
+Each Node proxies the allocated port
+
+
+Node (port 30100) - > Service (nodeport) ---> Pod1
+                                         ---> Pod2
+
+**LoadBalancer
+routes to different nodes based on traffic
+exposes a service externally
+useful when combined with a cloud provider's load balancer
+There is an nginx one and a few others
+
+
+external caller --> LoadBalancer(x.x.x.x:80) ------> Node(30105) Service (nodeport)
+                                             ------> Node(30105) Service (nodeport)
+
+
+**ExernalName 
+Service that acts as an alias for an external service
+Allows a service to act as a proxy for an external service
+External servcice details are hidden from cluster (easeir to change) ips might keep changing 
+Ability to call to external service that a pod might call
+
+
+
+*****Creating a servcie with kubectl
+Q: How can you access a pod from outside of Kubernetes (you can't)
+A: Port Forwarding
+use kubctl port-forward to forard to a local port to a Pod Port
+
+//for a pod
+k port-forward pod/[pod-name] 8080:80  
+
+//for a deployment
+k port-forward deployment/[deployment-name] 8080
+
+//for a service
+k port-forward service/[service-name] 8080
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

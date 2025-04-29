@@ -1,0 +1,122 @@
+
+Rancher reduces Kubernetes Complexity
+
+**Cluster Deployment, Operations, Security & Management
+Deploy & Monitor clusters on any infrastructure, centralized security policy Management, centralized RBAC controls, protect and recovery for clusters
+
+**App Workload Management
+Ability to deploy and orchestrate apps, integreates CI/CD or GitOps & contains a self-service app catalog
+
+
+**Open Source with an Enterprise Focus
+100% Free & Open Source, works with clusters in any environment. Kubernetes-as-a-Service, no vendor lock-in, paid support available
+
+
+***Core k8s/Rancher concepts
+Cluster - Collection of machines that run containerized applications managed by Kubernetes
+Namespace - A virtual cluster, multiple of which can be supported by a single physical cluster
+Node - One of the physical (vitural) machines that make up a cluster
+Pod - A Pod respresnts a set of running containers on you cluster
+Deployment - An api object that manages a replicated applications
+Workload - Units of work that are running on the cluster, these can be pods or deployments
+
+*********Options for Hosting Rancher
+**Linux Host Running Docker
+- Rancher can be deployed on a Linux server that is running Docker. Ranch will be deployed in containers running in Docker
+- A linux host can be (A cloud host virtual machine), AN on-prem VM, A bare metal server
+- Recommended for dev or lab use
+
+
+**On a Kubernetes Cluster
+Deployment on a high availablle Kubernetes cluster is recommended for prod deployment on a signle node cluster is OK for dev of lab use
+Can be
+-You own kubernetes cluseter, VMs or bare metal
+-Manage K8s service such as AKS, EKS, GKE, DigitalOcean
+-Rancher-launched K8 cluster via RKE
+
+Recommened for lab, dev or prod use
+
+Can run on RKE as well - rancher kubernetes cluster
+
+
+*********Rancher Architecture
+Rancher Server - ALl the components used to manage the entire deployment. 
+Rancher is depolys as a group of Namespaces, deployments, pods, services, & ingresses on a single node & or on a high availablity Kubernetes cluster
+There a differences between Rancher-launched downstream cluters & non-Rancher launched downstream clusters such as AKS, GKE, EKS, and non-RKE
+
+
+*********Types of Downstreem Kubernetes clusters
+Rancher Launched Kubernetes for Custom nodes ==> Rancher installs Rancher Kubernetes Engine (RKE) on existing nodes, creating a custom cluster)
+
+Rancher Launched Kubernetes for Nodes Hosted in Cloud Provider ==> Rancher dynaically deploys nodes in cloud provider such as AWS, DigitalOcean, Azure VMs or vShphere then installs Rancher Kubernetes Engine on them
+
+Hosted Kubernetes Providers ==> Rancher deploys a managed k8s service & cluster such as AKD, GKE and EKS 
+
+Registered Kubernetes Clusters - Rancher connnects to an exising k8s cluster setting up the rancher agents for communication between the cluster and Rancher
+
+
+
+********* Defining Rancher Server Architecture
+Authetication Proxy 
+- the auth proxy forwards all Kubernetes API calls to downstream clusters
+- communicates with Kubernetes clusters using a service account
+
+
+Cluster Controllers and Cluster agents
+- There is one cluster controller and on cluster agent for each downstream cluster
+- Downstream clusters have cluster agents which opens a tunnel to the corresponding cluster controller within the rancher server. 
+
+Node Agents 
+- The Rancher node agents run as a DaemonSet on every node in Rancher launched Kubernetes Clusters
+- Node Agents interact with the nodes when performing cluster operations & can act as a backup when cluster agents are not available
+
+Authorized Cluster Endpoint (on available for downstream rancher launched clusters)
+-An authorized cluster endpoint allows users to connect to the Kubernetes API server on a Rancher Launched downstream cluster wihtout having to route their reqeuests through a Rancher Auth Proxy
+
+
+
+********* Deploy & Manage Kubernetes with Rancher *********
+
+
+**** Rancher Deployment Methods
+
+Helm - Deploy Rancher on an existing K8s cluster from Helm chart
+Terraform - Provision a VM and deploy Rnahcer to that VM from rancher github repo
+Vagrant - Provision a VM in a VM running in VirturalBox and Deploy Rancher to it
+Manual - Install Rancher container on Docker
+
+Helm - Most Common Cloud Deployment Method for Rancher
+DigitalOcean, AWS, Azure, Google
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

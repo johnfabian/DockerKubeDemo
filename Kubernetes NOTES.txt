@@ -327,8 +327,6 @@ There is an nginx one and a few others
 
 external caller --> LoadBalancer(x.x.x.x:80) ------> Node(30105) Service (nodeport)
                                              ------> Node(30105) Service (nodeport)
-
-
 **ExernalName 
 Service that acts as an alias for an external service
 Allows a service to act as a proxy for an external service
@@ -348,53 +346,141 @@ k port-forward pod/[pod-name] 8080:80
 //for a deployment
 k port-forward deployment/[deployment-name] 8080
 
+k port-forward deployment/my-nginx 8080:80 (needs to forward the internal to 80 since that is what nginx runs on)
+
 //for a service
 k port-forward service/[service-name] 8080
 
 
 
+*****Storage Options
+
+How do you store application state/data and exchange it betweek Pods and Kubernetes
+
+Answer: Volumes (although other data storage options exist)
+
+Podss live and die so their file system is short lived (ephemeral)
+
+Volumes can be used to store state/data and use it in a Pod
+
+A Pod can have multiple Volumes attached to it
+
+Containers rely on a mountPath to access a Volumne
+
+Kubernetes Supports:
+- Volumes
+- PersistentVolumes
+- PersistentVolumeClaims
+- StorageClasses
+
+*****Storage Options - Volumes
+A volume references a storage location
+Must have a uniqe name
+Attached to a Pod and may or may not be tied to the Pod's lifetime (depending on the volumne type)
+A Volumne Mount references a Volume by name and defines a mountPath
+
+
+**Volume Types: (NOTE: There are a lot of volumne types. cloud and 3rd party)
+ emptyDir - empty directory for storying "transient" data (shares a Pod's lifetime), useful for shraing files betwewen containers running in a pod 
+ hostPath - Pod mounts into a node's filesystem
+ nfs - An NFS (Network File system) shared mounted into a pod
+ configMap/secret = Special types of volumes that provie a Pod with access to Kubernetes resouorces
+ persistentVolumeClaim - provides pods with a more persistent storage option that is abstracted from the details
+ cloud - cluster-wide storage
+
+**PersistentVolume and PersistenceVolumeClaim
+
+A persistent Volume (PV) is a cluster wide storage unit provisioned by an Administrator with a lifecycel independent from a Pod
+relies on some type of network attached storage (NAS)
+
+Normally provisioned by a cluster admin
+Available to a POD even if it gets rescheduled to a different Node
+Rely on storage provider such as NFS, cloud storage and other options
+Associated with a POD by using a PersistentVolumeClaim (PVC)
 
 
 
+Pod or other resource -->  PVC ---> PV | ---> storage
+                                       | ---> Kubernetes
+
+
+//great site to get examples
+https://github.com/kubernetes/examples 
 
 
 
+*****Storage StorageClasses
+
+A StorgeCLass (SC) is a type of storage template that can be used to dynamically provision storage
+
+Used to define different "classes" of storage
+Acts as a type of storage template
+Supports dynaimc provisioning of the PersistentVolumes (makes it much more flexible)
+The others were static, one by one
+
+1 - Create a Storage Class via yaml
+2 - Create PersistentVolumeClaim that references the StorageClass
+3 - Kubernetes uses the StorageCLass provisioner to provision a PersistentVolume
+
+POD ---> PVC ---> SC ---> PV Provisioner ---> PV ---> Storage
 
 
 
+*****ConfigMaps and Secrets
+ConfigMaps provide a way to store configration information and provide it to containers
+Provides a way to inject configuration data into a container
+Can store entire files or provide key/value pairs
+
+- Store in a File, Key is the filename, value is the file contents (can be JSON, XML, key/values, etc)
+
+Pod ----> ConfigMap
+
+ Proivde on the command-Line 
+ ConfigMap Manifest (yaml file)
+
+ Pod - acess configMaps eith by
+ - environment variables
+ - configMap volume
 
 
+ ****Creating a ConfigMap
+
+ ConfigMap Manifest yaml 
+
+ //Create a ConfigMap using data from a file, the file name becomes the key 
+ k create configMap [cm-name] --from-file=[path-to-file]
 
 
+**Via env file - will look like the manifest, no file name as key, value is the entire file
+k create configMap [cm-name] --from-env-file=[path-to-file]
+
+ ****Using a ConfigMap
+
+//Get a ConfigMap and see the yaml
+ k get cm [cm-name] -o yaml  
+
+//get all
+ k get cm
 
 
+********Code With Dan Services sample app---See sample app
+//instead of each file separately with -f you can apply to the entire directory
+k apply -f .k8s 
 
 
+***Debugging
 
+//view logs for a pod's container
+k logs [pod-name]
 
+//view logs for a specific container within a pod
+k logs [pod-name] -c [container-name]
 
+//view logs for a previously running pod
+k logs -p [pod-name]
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// Stream a pod's logs
+k logs -f [pod-name]
 
 
 
